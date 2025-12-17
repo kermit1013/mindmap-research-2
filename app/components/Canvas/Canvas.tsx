@@ -1,0 +1,195 @@
+'use client';
+
+import React, { useCallback, useRef, useState } from 'react';
+import {
+  ReactFlow,
+  useNodesState,
+  useEdgesState,
+  addEdge,
+  Background,
+  Controls,
+  Connection,
+  Edge,
+  Node,
+  ReactFlowProvider,
+  BackgroundVariant,
+  useReactFlow,
+  OnConnectEnd,
+  Panel,
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+import { v4 as uuidv4 } from 'uuid';
+
+import CustomNode from './CustomNode';
+
+const nodeTypes = {
+  card: CustomNode,
+};
+
+const initialNodes: Node[] = [
+  {
+    id: '1',
+    type: 'card',
+    position: { x: 250, y: 250 },
+    data: { label: 'Welcome', content: 'Double click background to add a node.' },
+    style: { width: 300, height: 150 },
+  },
+];
+
+import { getHelperLines, GuideLine } from './alignmentHelper';
+import { GuideLines } from './GuideLines';
+
+const CanvasContent = () => {
+    const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+    const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+    const { screenToFlowPosition } = useReactFlow();
+    
+    // Helper lines state
+    const [guideLines, setGuideLines] = useState<{ horizontal: GuideLine | null; vertical: GuideLine | null }>({
+        horizontal: null,
+        vertical: null
+    });
+
+    const onNodeDrag = useCallback((event: React.MouseEvent, node: Node) => {
+        const { horizontal, vertical, snappedPosition } = getHelperLines(node, nodes);
+        
+        if (snappedPosition.x !== undefined || snappedPosition.y !== undefined) {
+             setNodes((nds) => nds.map((n) => {
+                if (n.id === node.id) {
+                    return {
+                        ...n,
+                        position: {
+                            x: snappedPosition.x ?? n.position.x,
+                            y: snappedPosition.y ?? n.position.y,
+                        }
+                    }
+                }
+                return n;
+             }));
+        }
+
+        setGuideLines({ horizontal, vertical });
+    }, [nodes, setNodes]);
+
+    const onNodeDragStop = useCallback(() => {
+        setGuideLines({ horizontal: null, vertical: null });
+    }, []);
+
+    // Connect to create - references
+    const connectingNodeId = useRef<string | null>(null);
+    const connectingHandleId = useRef<string | null>(null);
+
+    const onConnect = useCallback(
+        (params: Connection) => setEdges((eds) => addEdge(params, eds)),
+        [setEdges],
+    );
+
+    const onConnectStart = useCallback((_: any, { nodeId, handleId }: { nodeId: string | null; handleId: string | null }) => {
+        connectingNodeId.current = nodeId;
+        connectingHandleId.current = handleId;
+    }, []);
+
+    const onConnectEnd: OnConnectEnd = useCallback(
+        (event, connectionState) => {
+            if (!connectionState.isValid) {
+                // Determine position
+                const id = uuidv4();
+                const { clientX, clientY } = 'changedTouches' in event ? event.changedTouches[0] : event;
+                const position = screenToFlowPosition({ x: clientX, y: clientY });
+                
+                // If we dragged from a node, create a new node and connect it
+                if (connectingNodeId.current) {
+                    const sourceHandle = connectingHandleId.current;
+                    let targetHandle = null;
+
+                    // Simple smart-ish target handle logic: opposite of source
+                    switch (sourceHandle) {
+                        case 'top': targetHandle = 'bottom'; break;
+                        case 'bottom': targetHandle = 'top'; break;
+                        case 'left': targetHandle = 'right'; break;
+                        case 'right': targetHandle = 'left'; break;
+                    }
+
+                    const newNode: Node = {
+                        id,
+                        type: 'card',
+                        position,
+                        data: { label: '', content: '' },
+                        origin: [0.5, 0.5],
+                        style: { width: 300, height: 150 },
+                    };
+                    
+                    setNodes((nds) => nds.concat(newNode));
+                    setEdges((eds) =>
+                        eds.concat({ 
+                            id: uuidv4(), 
+                            source: connectingNodeId.current!, 
+                            target: id, 
+                            sourceHandle: sourceHandle,
+                            targetHandle: targetHandle,
+                            type: 'default' 
+                        } as Edge),
+                    );
+                }
+            }
+        },
+        [screenToFlowPosition, setEdges, setNodes],
+    );
+
+    // Double click handler on wrapper
+    const onDoubleClick = useCallback((event: React.MouseEvent) => {
+        // Prevent strictly on nodes (handled by stopPropagation usually)
+        if ((event.target as HTMLElement).closest('.react-flow__node')) {
+            return;
+        }
+
+        const id = uuidv4();
+        const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+
+        const newNode: Node = {
+            id,
+            type: 'card',
+            position, // Center on click
+            origin: [0, 0], // Default origin
+            data: { label: '', content: '' },
+            style: { width: 300, height: 150, margin: 'auto' },
+        };
+        setNodes((nds) => nds.concat(newNode));
+    }, [screenToFlowPosition, setNodes]);
+
+    return (
+        <div className="h-full w-full bg-[#111111]" onDoubleClick={onDoubleClick}>
+            <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                onConnectStart={onConnectStart}
+                onConnectEnd={onConnectEnd}
+                onNodeDrag={onNodeDrag}
+                onNodeDragStop={onNodeDragStop}
+                nodeTypes={nodeTypes}
+                fitView
+                zoomOnDoubleClick={false} // Disable zoom on double click
+                className="bg-white"
+            >
+                <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#e5e5e5" />
+                <Controls className="!bg-white !border-[#eee] [&>button]:!fill-[#666] [&>button]:!border-[#eee] hover:[&>button]:!bg-[#f5f5f5]" />
+                <Panel position="top-right" className="bg-white p-2 rounded text-[#444] text-xs border border-[#eee] shadow-sm">
+                    Double-click to add node<br/>
+                    Drag from handle to create linked node
+                </Panel>
+                <GuideLines horizontal={guideLines.horizontal} vertical={guideLines.vertical} />
+            </ReactFlow>
+        </div>
+    );
+};
+
+export default function Canvas() {
+  return (
+    <ReactFlowProvider>
+      <CanvasContent />
+    </ReactFlowProvider>
+  );
+}
