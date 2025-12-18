@@ -7,7 +7,7 @@ import { Handle, Position, NodeProps, NodeResizeControl, useReactFlow, NodeToolb
 // }
 
 const CustomNode = ({ id, data, selected }: NodeProps) => {
-  const { label, content, imageUrl, isCover } = data as { label?: string; content?: string; imageUrl?: string; isCover?: boolean };
+  const { label, content, imageUrl } = data as { label?: string; content?: string; imageUrl?: string };
   const { updateNodeData, deleteElements } = useReactFlow();
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(content || label || '');
@@ -56,7 +56,7 @@ const CustomNode = ({ id, data, selected }: NodeProps) => {
 
                     {imageUrl && (
                         <button 
-                            onClick={() => {updateNodeData(id, { isCover: !isCover });}}
+                            onClick={() => {/* Set as Cover functionality */}}
                             className="!border-none  !cursor-pointer !bg-inherit !margin: '3px', !padding: '5px 7px', !border-radius: '50%', !box-shadow: 'var(--xy-node-boxshadow-default)'"
                             title="Set as Cover"
                         >
@@ -140,10 +140,10 @@ const CustomNode = ({ id, data, selected }: NodeProps) => {
         />
 
 
-        <div className={`h-full flex flex-col box-border items-center w-full overflow-hidden ${imageUrl ? (isCover ? 'p-0' : 'p-2') : 'p-6 justify-center'}`}>
+        <div className={`h-full flex flex-col box-border items-center w-full overflow-hidden ${imageUrl ? 'p-2' : 'p-6 justify-center'}`}>
             {imageUrl && (
-              <div className={`w-full flex-grow relative ${isCover ? 'mb-0' : 'mb-2'}`}>
-                 <img src={imageUrl} alt="Node" className={`w-full h-full object-cover pointer-events-none block ${isCover ? 'rounded-[25px]' : 'rounded-[20px]'}`} />
+              <div className="w-full flex-grow relative">
+                 <img src={imageUrl} alt="Node" className="w-full h-full object-cover pointer-events-none block rounded-[20px]" />
               </div>
             )}
             
@@ -151,7 +151,7 @@ const CustomNode = ({ id, data, selected }: NodeProps) => {
                  <textarea
                     ref={textareaRef}
                     className="w-full bg-transparent resize-none outline-none border-none text-center text-xl font-medium text-[#222] overflow-hidden break-words whitespace-pre-wrap m-auto p-0 z-10"
-                    style={{ height: imageUrl ? 'auto' : undefined, position: isCover ? 'absolute' : 'static', bottom: isCover ? '10px' : 'auto' }}
+                    style={{ height: imageUrl ? 'auto' : undefined }}
                     value={editValue}
                     onChange={onChange}
                     onBlur={onBlur}
@@ -169,7 +169,7 @@ const CustomNode = ({ id, data, selected }: NodeProps) => {
                     }}
                  />
             ) : (
-                <div className={`text-xl text-[#222] font-medium text-center overflow-y-auto scrollbar-none w-full break-words whitespace-pre-wrap ${imageUrl ? (isCover ? 'absolute bottom-2 z-10 px-4' : 'mt-auto') : 'm-auto'}`}>
+                <div className={`text-xl text-[#222] font-medium text-center overflow-y-auto scrollbar-none w-full break-words whitespace-pre-wrap ${imageUrl ? 'mt-auto' : 'm-auto'}`}>
                     {content || label || (selected ? "" : "Double click to edit...")}
                 </div>
             )}

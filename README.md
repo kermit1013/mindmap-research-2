@@ -131,6 +131,7 @@ interface CanvasNode {
   data: {
     label?: string;                  // Legacy field (optional)
     content: string;                 // Node text content
+    imageUrl?: string;               // Optional image URL/DataURI
   };
   style?: {                          // Persisted dimensions
     width: number;
@@ -214,10 +215,22 @@ useEffect(() => {
         "type": "card",
         "position": { "x": 643.38, "y": 873.51 },
         "data": {
-          "content": "衝浪",
+          "content": "Surfing",
           "label": ""
         },
         "style": { "width": 300, "height": 150 }
+      },
+      {
+        "id": "image-node-1",
+        "type": "card",
+        "position": { "x": 300, "y": 400 },
+        "data": {
+          "content": "",
+          "label": "Beach.png",
+          "imageUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+          "isCover": true
+        },
+        "style": { "width": 300, "height": 250 }
       }
     ],
     "edges": [
