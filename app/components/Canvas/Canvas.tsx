@@ -38,17 +38,23 @@ const initialNodes: Node[] = [
 
 import { getHelperLines, GuideLine } from './alignmentHelper';
 import { GuideLines } from './GuideLines';
+import useUndoRedo from './useUndoRedo';
 
 const CanvasContent = () => {
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
     const { screenToFlowPosition } = useReactFlow();
+    const { takeSnapshot } = useUndoRedo();
     
     // Helper lines state
     const [guideLines, setGuideLines] = useState<{ horizontal: GuideLine | null; vertical: GuideLine | null }>({
         horizontal: null,
         vertical: null
     });
+
+    const onNodeDragStart = useCallback(() => {
+        takeSnapshot();
+    }, [takeSnapshot]);
 
     const onNodeDrag = useCallback((event: React.MouseEvent, node: Node) => {
         const { horizontal, vertical, snappedPosition } = getHelperLines(node, nodes);
@@ -84,8 +90,11 @@ const CanvasContent = () => {
     };
 
     const onConnect = useCallback(
-        (params: Connection) => setEdges((eds) => addEdge({ ...params, ...defaultEdgeOptions }, eds)),
-        [setEdges],
+        (params: Connection) => {
+            takeSnapshot();
+            setEdges((eds) => addEdge({ ...params, ...defaultEdgeOptions }, eds));
+        },
+        [setEdges, takeSnapshot],
     );
 
     const onConnectStart = useCallback((_: any, { nodeId, handleId }: { nodeId: string | null; handleId: string | null }) => {
@@ -103,6 +112,7 @@ const CanvasContent = () => {
                 
                 // If we dragged from a node, create a new node and connect it
                 if (connectingNodeId.current) {
+                    takeSnapshot();
                     const sourceHandle = connectingHandleId.current;
                     let targetHandle = null;
 
@@ -138,7 +148,7 @@ const CanvasContent = () => {
                 }
             }
         },
-        [screenToFlowPosition, setEdges, setNodes],
+        [screenToFlowPosition, setEdges, setNodes, takeSnapshot],
     );
 
     // Double click handler on wrapper
@@ -147,7 +157,8 @@ const CanvasContent = () => {
         if ((event.target as HTMLElement).closest('.react-flow__node')) {
             return;
         }
-
+        
+        takeSnapshot();
         const id = uuidv4();
         const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
 
@@ -160,7 +171,7 @@ const CanvasContent = () => {
             style: { width: 300, height: 150, margin: 'auto' },
         };
         setNodes((nds) => nds.concat(newNode));
-    }, [screenToFlowPosition, setNodes]);
+    }, [screenToFlowPosition, setNodes, takeSnapshot]);
 
     // Paste handler
     React.useEffect(() => {
@@ -177,6 +188,7 @@ const CanvasContent = () => {
                     reader.onload = (e) => {
                         const result = e.target?.result as string;
                         if (result) {
+                            takeSnapshot();
                             const id = uuidv4();
                             // Default to center of screen
                             const position = screenToFlowPosition({ 
@@ -226,6 +238,7 @@ const CanvasContent = () => {
                 onConnect={onConnect}
                 onConnectStart={onConnectStart}
                 onConnectEnd={onConnectEnd}
+                onNodeDragStart={onNodeDragStart}
                 onNodeDrag={onNodeDrag}
                 onNodeDragStop={onNodeDragStop}
                 nodeTypes={nodeTypes}
