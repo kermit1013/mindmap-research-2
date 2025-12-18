@@ -7,7 +7,7 @@ import { Handle, Position, NodeProps, NodeResizeControl, useReactFlow } from '@x
 // }
 
 const CustomNode = ({ id, data, selected }: NodeProps) => {
-  const { label, content } = data as { label?: string; content?: string };
+  const { label, content, imageUrl } = data as { label?: string; content?: string; imageUrl?: string };
   const { updateNodeData } = useReactFlow();
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(content || label || '');
@@ -15,13 +15,14 @@ const CustomNode = ({ id, data, selected }: NodeProps) => {
 
   const onDoubleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent canvas double click
+    // Allow editing label/content even if it's an image node
     setIsEditing(true);
     setEditValue(content || label || '');
   }, [content, label]);
 
   const onBlur = useCallback(() => {
     setIsEditing(false);
-    updateNodeData(id, { content: editValue, label: '' }); // Simplify to just content for now as user asked to remove "New Card"
+    updateNodeData(id, { content: editValue, label: '' }); 
   }, [id, editValue, updateNodeData]);
 
   const onChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -104,11 +105,18 @@ const CustomNode = ({ id, data, selected }: NodeProps) => {
         />
 
 
-        <div className="p-6 h-full flex flex-col box-border justify-center items-center w-full overflow-hidden">
+        <div className={`h-full flex flex-col box-border items-center w-full overflow-hidden ${imageUrl ? 'p-2' : 'p-6 justify-center'}`}>
+            {imageUrl && (
+              <div className="w-full flex-grow relative mb-2">
+                 <img src={imageUrl} alt="Node" className="w-full h-full object-cover rounded-[20px] pointer-events-none block" />
+              </div>
+            )}
+            
             {isEditing ? (
                  <textarea
                     ref={textareaRef}
                     className="w-full bg-transparent resize-none outline-none border-none text-center text-xl font-medium text-[#222] overflow-hidden break-words whitespace-pre-wrap m-auto p-0"
+                    style={{ height: imageUrl ? 'auto' : undefined }}
                     value={editValue}
                     onChange={onChange}
                     onBlur={onBlur}
@@ -122,12 +130,11 @@ const CustomNode = ({ id, data, selected }: NodeProps) => {
                         const target = e.target as HTMLTextAreaElement;
                         target.style.height = 'auto';
                         target.style.height = `${target.scrollHeight}px`;
-                        // Move cursor to end
                         target.setSelectionRange(target.value.length, target.value.length);
                     }}
                  />
             ) : (
-                <div className="text-xl text-[#222] font-medium text-center m-auto overflow-y-auto scrollbar-none w-full break-words whitespace-pre-wrap">
+                <div className={`text-xl text-[#222] font-medium text-center overflow-y-auto scrollbar-none w-full break-words whitespace-pre-wrap ${imageUrl ? 'mt-auto' : 'm-auto'}`}>
                     {content || label || (selected ? "" : "Double click to edit...")}
                 </div>
             )}

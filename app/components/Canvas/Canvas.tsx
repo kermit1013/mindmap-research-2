@@ -162,6 +162,60 @@ const CanvasContent = () => {
         setNodes((nds) => nds.concat(newNode));
     }, [screenToFlowPosition, setNodes]);
 
+    // Paste handler
+    React.useEffect(() => {
+        const handlePaste = (event: ClipboardEvent) => {
+            const items = event.clipboardData?.items;
+            if (!items) return;
+
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    const blob = items[i].getAsFile();
+                    if (!blob) continue;
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const result = e.target?.result as string;
+                        if (result) {
+                            const id = uuidv4();
+                            // Default to center of screen
+                            const position = screenToFlowPosition({ 
+                                x: window.innerWidth / 2, 
+                                y: window.innerHeight / 2 
+                            });
+                            
+                            // Adjust for node size to truly center (approx 300x250)
+                            const adjustedPosition = { 
+                                x: position.x - 150, 
+                                y: position.y - 125 
+                            };
+
+                            const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, 14); // YYYYMMDDHHMMSS format
+
+                            const newNode: Node = {
+                                id,
+                                type: 'card',
+                                position: adjustedPosition,
+                                data: { 
+                                    label: `Pasted image ${timestamp}.png`, 
+                                    content: '',
+                                    imageUrl: result 
+                                },
+                                style: { width: 300, height: 250 }, 
+                            };
+                            setNodes((nds) => nds.concat(newNode));
+                        }
+                    };
+                    reader.readAsDataURL(blob);
+                    event.preventDefault(); // Prevent default paste behavior (optional but good)
+                }
+            }
+        };
+
+        window.addEventListener('paste', handlePaste);
+        return () => window.removeEventListener('paste', handlePaste);
+    }, [screenToFlowPosition, setNodes]);
+
     return (
         <div className="h-full w-full bg-[#fbfbfb]" onDoubleClick={onDoubleClick}>
             <ReactFlow
