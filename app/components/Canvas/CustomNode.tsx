@@ -1,5 +1,5 @@
-import React, { memo, useCallback } from 'react';
-import { Handle, Position, NodeProps, NodeResizer, useReactFlow } from '@xyflow/react';
+import React, { memo, useCallback, useState, useRef } from 'react';
+import { Handle, Position, NodeProps, NodeResizeControl, useReactFlow } from '@xyflow/react';
 
 // interface CustomNodeData extends Record<string, unknown> {
 //   label?: string;
@@ -9,9 +9,9 @@ import { Handle, Position, NodeProps, NodeResizer, useReactFlow } from '@xyflow/
 const CustomNode = ({ id, data, selected }: NodeProps) => {
   const { label, content } = data as { label?: string; content?: string };
   const { updateNodeData } = useReactFlow();
-  const [isEditing, setIsEditing] = React.useState(false);
-  const [editValue, setEditValue] = React.useState(content || label || '');
-  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(content || label || '');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const onDoubleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent canvas double click
@@ -30,15 +30,17 @@ const CustomNode = ({ id, data, selected }: NodeProps) => {
 
   return (
     <>
-      <NodeResizer 
-        minWidth={100} 
-        minHeight={50} 
-        isVisible={selected} 
-        lineClassName="border-transparent" 
-        handleClassName="h-2.5 w-2.5 bg-[#b4c46c] border-none rounded-full"
-      />
+      {selected && (
+        <NodeResizeControl 
+          style={{ background: 'transparent', border: 'none' }}
+          minWidth={100} 
+          minHeight={50} 
+        >
+          <ResizeIcon />
+        </NodeResizeControl>
+      )}
       <div 
-        className={`shadow-sm rounded-[28px] bg-[#f9f9f9] border-2 transition-all duration-75 ${selected ? 'border-[#b4c46c] shadow-[0_0_0_1px_#b4c46c]' : 'border-transparent hover:border-[#e0e0e0]'} text-[#222] h-full w-full min-h-[50px] min-w-[100px] flex flex-col justify-center`}
+        className={`shadow-sm rounded-[28px] bg-[#f9f9f9] border-[3px] transition-all duration-75 ${selected ? 'border-[#FFCC35]' : 'border-transparent hover:border-[#e0e0e0]'} text-[#222] h-full w-full min-h-[50px] min-w-[100px] flex flex-col justify-center`}
         onDoubleClick={onDoubleClick}
       >
         {/* Handles */}
@@ -46,25 +48,29 @@ const CustomNode = ({ id, data, selected }: NodeProps) => {
           id="top"
           type="target"
           position={Position.Top}
-          className="w-3 h-3 bg-[#424242] border-2 border-[#1e1e1e] !top-[-6px] opacity-0 hover:opacity-100"
+          style={{ width: '20px', height: '20px' }}
+          className="!bg-[#FFCC35] !border-none !top-[-10px] opacity-0 hover:opacity-100 transition-opacity"
         />
         <Handle
           id="left"
           type="target"
           position={Position.Left}
-          className="w-3 h-3 bg-[#424242] border-2 border-[#1e1e1e] !left-[-6px] opacity-0 hover:opacity-100"
+          style={{ width: '20px', height: '20px' }}
+          className="!bg-[#FFCC35] !border-none !left-[-10px] opacity-0 hover:opacity-100 transition-opacity"
         />
         <Handle
           id="bottom"
           type="target"
           position={Position.Bottom}
-          className="w-3 h-3 bg-[#424242] border-2 border-[#1e1e1e] !bottom-[-6px] opacity-0 hover:opacity-100"
+          style={{ width: '20px', height: '20px' }}
+          className="!bg-[#FFCC35] !border-none !bottom-[-10px] opacity-0 hover:opacity-100 transition-opacity"
         />
         <Handle
           id="right"
           type="target"
           position={Position.Right}
-          className="w-3 h-3 bg-[#424242] border-2 border-[#1e1e1e] !right-[-6px] opacity-0 hover:opacity-100"
+          style={{ width: '20px', height: '20px' }}
+          className="!bg-[#FFCC35] !border-none !right-[-10px] opacity-0 hover:opacity-100 transition-opacity"
         />
 
         {/* Source Handles */}
@@ -72,41 +78,57 @@ const CustomNode = ({ id, data, selected }: NodeProps) => {
             id="top"
             type="source"
             position={Position.Top}
-            className="w-3 h-3 opacity-0 hover:opacity-100 bg-[#eeb211] border-2 border-[#1e1e1e] !top-[-6px] z-10"
+            style={{ width: '20px', height: '20px' }}
+            className="!bg-[#FFCC35] !border-none !top-[-10px] opacity-0 hover:opacity-100 transition-opacity z-10"
         />
         <Handle
             id="bottom"
             type="source"
             position={Position.Bottom}
-            className="w-3 h-3 opacity-0 hover:opacity-100 bg-[#eeb211] border-2 border-[#1e1e1e] !bottom-[-6px] z-10"
+            style={{ width: '20px', height: '20px' }}
+            className="!bg-[#FFCC35] !border-none !bottom-[-10px] opacity-0 hover:opacity-100 transition-opacity z-10"
         />
         <Handle
             id="left"
             type="source"
             position={Position.Left}
-            className="w-3 h-3 opacity-0 hover:opacity-100 bg-[#eeb211] border-2 border-[#1e1e1e] !left-[-6px] z-10"
+            style={{ width: '20px', height: '20px' }}
+            className="!bg-[#FFCC35] !border-none !left-[-10px] opacity-0 hover:opacity-100 transition-opacity z-10"
         />
         <Handle
             id="right"
             type="source"
             position={Position.Right}
-            className="w-3 h-3 opacity-0 hover:opacity-100 bg-[#eeb211] border-2 border-[#1e1e1e] !right-[-6px] z-10"
+            style={{ width: '20px', height: '20px' }}
+            className="!bg-[#FFCC35] !border-none !right-[-10px] opacity-0 hover:opacity-100 transition-opacity z-10"
         />
 
 
-        <div className="p-6 h-full flex flex-col box-border justify-center items-center w-full">
+        <div className="p-6 h-full flex flex-col box-border justify-center items-center w-full overflow-hidden">
             {isEditing ? (
                  <textarea
                     ref={textareaRef}
-                    className="w-full h-full bg-transparent resize-none outline-none text-center text-lg text-[#222]"
+                    className="w-full bg-transparent resize-none outline-none border-none text-center text-xl font-medium text-[#222] overflow-hidden break-words whitespace-pre-wrap m-auto p-0"
                     value={editValue}
                     onChange={onChange}
                     onBlur={onBlur}
+                    onInput={(e) => {
+                        const target = e.target as HTMLTextAreaElement;
+                        target.style.height = 'auto';
+                        target.style.height = `${target.scrollHeight}px`;
+                    }}
                     autoFocus
+                    onFocus={(e) => {
+                        const target = e.target as HTMLTextAreaElement;
+                        target.style.height = 'auto';
+                        target.style.height = `${target.scrollHeight}px`;
+                        // Move cursor to end
+                        target.setSelectionRange(target.value.length, target.value.length);
+                    }}
                  />
             ) : (
                 <div className="text-xl text-[#222] font-medium text-center m-auto overflow-y-auto scrollbar-none w-full break-words whitespace-pre-wrap">
-                    {content || label || "Double click to edit..."}
+                    {content || label || (selected ? "" : "Double click to edit...")}
                 </div>
             )}
         </div>
@@ -116,3 +138,24 @@ const CustomNode = ({ id, data, selected }: NodeProps) => {
 };
 
 export default memo(CustomNode);
+
+function ResizeIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      strokeWidth="2"
+      stroke="#FFCC35"
+      fill="none"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{ position: 'absolute', right: 5, bottom: 5, cursor: 'nwse-resize' }}
+    >
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <polyline points="16 20 20 20 20 16" />
+      <line x1="14" y1="14" x2="20" y2="20" />
+    </svg>
+  );
+}

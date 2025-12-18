@@ -41,7 +41,7 @@ export const GuideLines = ({ horizontal, vertical }: GuideLinesProps) => {
 
     ctx.scale(dpi, dpi);
     ctx.clearRect(0, 0, width, height);
-    ctx.strokeStyle = '#b4c46c';
+    ctx.strokeStyle = '#FFCC35';
     ctx.lineWidth = 1;
 
     if (vertical && typeof vertical.x === 'number') {

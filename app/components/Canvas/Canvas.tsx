@@ -79,8 +79,12 @@ const CanvasContent = () => {
     const connectingNodeId = useRef<string | null>(null);
     const connectingHandleId = useRef<string | null>(null);
 
+    const defaultEdgeOptions = {
+        style: { strokeWidth: 3, stroke: '#b1b1b7' },
+    };
+
     const onConnect = useCallback(
-        (params: Connection) => setEdges((eds) => addEdge(params, eds)),
+        (params: Connection) => setEdges((eds) => addEdge({ ...params, ...defaultEdgeOptions }, eds)),
         [setEdges],
     );
 
@@ -127,7 +131,8 @@ const CanvasContent = () => {
                             target: id, 
                             sourceHandle: sourceHandle,
                             targetHandle: targetHandle,
-                            type: 'default' 
+                            type: 'default',
+                            ...defaultEdgeOptions
                         } as Edge),
                     );
                 }
@@ -158,7 +163,7 @@ const CanvasContent = () => {
     }, [screenToFlowPosition, setNodes]);
 
     return (
-        <div className="h-full w-full bg-[#111111]" onDoubleClick={onDoubleClick}>
+        <div className="h-full w-full bg-[#fbfbfb]" onDoubleClick={onDoubleClick}>
             <ReactFlow
                 nodes={nodes}
                 edges={edges}
@@ -170,11 +175,11 @@ const CanvasContent = () => {
                 onNodeDrag={onNodeDrag}
                 onNodeDragStop={onNodeDragStop}
                 nodeTypes={nodeTypes}
+                defaultEdgeOptions={defaultEdgeOptions}
                 fitView
                 zoomOnDoubleClick={false} // Disable zoom on double click
-                className="bg-white"
             >
-                <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#e5e5e5" />
+                <Background variant={BackgroundVariant.Dots} gap={20} size={1.5} color="#d1d1d1" />
                 <Controls className="!bg-white !border-[#eee] [&>button]:!fill-[#666] [&>button]:!border-[#eee] hover:[&>button]:!bg-[#f5f5f5]" />
                 <Panel position="top-right" className="bg-white p-2 rounded text-[#444] text-xs border border-[#eee] shadow-sm">
                     Double-click to add node<br/>
