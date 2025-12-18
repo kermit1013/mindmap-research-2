@@ -228,7 +228,6 @@ useEffect(() => {
           "content": "",
           "label": "Beach.png",
           "imageUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
-          "isCover": true
         },
         "style": { "width": 300, "height": 250 }
       }
