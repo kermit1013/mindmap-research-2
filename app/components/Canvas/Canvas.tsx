@@ -39,12 +39,14 @@ const initialNodes: Node[] = [
 import { getHelperLines, GuideLine } from './alignmentHelper';
 import { GuideLines } from './GuideLines';
 import useUndoRedo from './useUndoRedo';
+import { useCopyPaste } from './useCopyPaste';
 
 const CanvasContent = () => {
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
     const { screenToFlowPosition } = useReactFlow();
     const { takeSnapshot } = useUndoRedo();
+    const { cut, copy, paste } = useCopyPaste();
     
     // Helper lines state
     const [guideLines, setGuideLines] = useState<{ horizontal: GuideLine | null; vertical: GuideLine | null }>({
@@ -173,61 +175,6 @@ const CanvasContent = () => {
         setNodes((nds) => nds.concat(newNode));
     }, [screenToFlowPosition, setNodes, takeSnapshot]);
 
-    // Paste handler
-    React.useEffect(() => {
-        const handlePaste = (event: ClipboardEvent) => {
-            const items = event.clipboardData?.items;
-            if (!items) return;
-
-            for (let i = 0; i < items.length; i++) {
-                if (items[i].type.indexOf('image') !== -1) {
-                    const blob = items[i].getAsFile();
-                    if (!blob) continue;
-
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const result = e.target?.result as string;
-                        if (result) {
-                            takeSnapshot();
-                            const id = uuidv4();
-                            // Default to center of screen
-                            const position = screenToFlowPosition({ 
-                                x: window.innerWidth / 2, 
-                                y: window.innerHeight / 2 
-                            });
-                            
-                            // Adjust for node size to truly center (approx 300x250)
-                            const adjustedPosition = { 
-                                x: position.x - 150, 
-                                y: position.y - 125 
-                            };
-
-                            const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, 14); // YYYYMMDDHHMMSS format
-
-                            const newNode: Node = {
-                                id,
-                                type: 'card',
-                                position: adjustedPosition,
-                                data: { 
-                                    label: `Pasted image ${timestamp}.png`, 
-                                    content: '',
-                                    imageUrl: result 
-                                },
-                                style: { width: 300, height: 250 }, 
-                            };
-                            setNodes((nds) => nds.concat(newNode));
-                        }
-                    };
-                    reader.readAsDataURL(blob);
-                    event.preventDefault(); // Prevent default paste behavior (optional but good)
-                }
-            }
-        };
-
-        window.addEventListener('paste', handlePaste);
-        return () => window.removeEventListener('paste', handlePaste);
-    }, [screenToFlowPosition, setNodes]);
-
     return (
         <div className="h-full w-full bg-[#fbfbfb]" onDoubleClick={onDoubleClick}>
             <ReactFlow
@@ -250,7 +197,8 @@ const CanvasContent = () => {
                 <Controls className="!bg-white !border-[#eee] [&>button]:!fill-[#666] [&>button]:!border-[#eee] hover:[&>button]:!bg-[#f5f5f5]" />
                 <Panel position="top-right" className="bg-white p-2 rounded text-[#444] text-xs border border-[#eee] shadow-sm">
                     Double-click to add node<br/>
-                    Drag from handle to create linked node
+                    Drag from handle to create linked node<br/>
+                    Cmd/Ctrl+C to copy, Cmd/Ctrl+X to cut, Cmd/Ctrl+V to paste
                 </Panel>
                 <GuideLines horizontal={guideLines.horizontal} vertical={guideLines.vertical} />
             </ReactFlow>
