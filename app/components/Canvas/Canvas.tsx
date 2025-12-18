@@ -47,6 +47,80 @@ const CanvasContent = () => {
     const { screenToFlowPosition } = useReactFlow();
     const { takeSnapshot } = useUndoRedo();
     const { cut, copy, paste } = useCopyPaste();
+
+    // Save status state: 'saved' | 'saving' | 'error'
+    const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+    const loadGraph = useCallback(async () => {
+        try {
+            const response = await fetch('http://localhost:8080/api/graphs/26', {
+                method: 'GET',
+                headers: {
+                    'accept': '*/*',
+                }
+            });
+            if (!response.ok) throw new Error('Failed to load');
+            const data = await response.json();
+            console.log(data.data.content);
+            
+            // Assuming the structure is { ..., content: '{"nodes": [], "edges": []}' }
+            if (data.data.content) {
+                const parsedContent = JSON.parse(data.data.content);
+                if (parsedContent.nodes) setNodes(parsedContent.nodes);
+                if (parsedContent.edges) setEdges(parsedContent.edges);
+            }
+            
+            setIsInitialLoad(false);
+        } catch (error) {
+            console.error('Load error:', error);
+            // Even if it fails, we release the lock so user can start fresh
+            setIsInitialLoad(false); 
+        }
+    }, [setNodes, setEdges]);
+
+    // Initial load
+    React.useEffect(() => {
+        loadGraph();
+    }, [loadGraph]);
+
+    const saveGraph = useCallback(async () => {
+        if (isInitialLoad) return; // double safety
+        setSaveStatus('saving');
+        try {
+            const response = await fetch('http://localhost:8080/api/graphs/26', {
+                method: 'PUT',
+                headers: {
+                    'accept': '*/*',
+                    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJrODQxMDEzMTFAZ21haWwuY29tIiwianRpIjoiZjdmNzI4NTYtYmQ3Ni00NTQzLTljYjItMjFjMWZiYzQ1YTkyIiwiaWF0IjoxNzY2MDQ1MzQ3LCJleHAiOjE3NjYxMzE3NDd9.9Ai027nSMdAynMOk8tW6ZDB76OGYTBXpYDycv9myM2U',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    'content': JSON.stringify({
+                    nodes,
+                    edges
+                })
+                })
+            });
+            
+            if (!response.ok) throw new Error('Failed to save');
+            setSaveStatus('saved');
+        } catch (error) {
+            console.error('Save error:', error);
+            setSaveStatus('error');
+        }
+    }, [nodes, edges, isInitialLoad]);
+
+    // Debounced auto-save
+    React.useEffect(() => {
+        if (isInitialLoad) return; // Prevent saving before loading
+        
+        const timer = setTimeout(() => {
+            saveGraph();
+        }, 1500); // 1.5s debounce
+
+        return () => clearTimeout(timer);
+    }, [nodes, edges, saveGraph, isInitialLoad]);
     
     // Helper lines state
     const [guideLines, setGuideLines] = useState<{ horizontal: GuideLine | null; vertical: GuideLine | null }>({
@@ -196,6 +270,16 @@ const CanvasContent = () => {
                 <Background variant={BackgroundVariant.Dots} gap={20} size={1.5} color="#d1d1d1" />
                 <Controls className="!bg-white !border-[#eee] [&>button]:!fill-[#666] [&>button]:!border-[#eee] hover:[&>button]:!bg-[#f5f5f5]" />
                 <Panel position="top-right" className="bg-white p-2 rounded text-[#444] text-xs border border-[#eee] shadow-sm">
+                    <div className="flex items-center gap-2 mb-1 justify-between">
+                        <span className="font-bold">Status:</span>
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-bold ${
+                            saveStatus === 'saved' ? 'bg-green-100 text-green-700' :
+                            saveStatus === 'saving' ? 'bg-blue-100 text-blue-700 animate-pulse' :
+                            'bg-red-100 text-red-700'
+                        }`}>
+                            {saveStatus}
+                        </span>
+                    </div>
                     Double-click to add node<br/>
                     Drag from handle to create linked node<br/>
                     Cmd/Ctrl+C to copy, Cmd/Ctrl+X to cut, Cmd/Ctrl+V to paste
